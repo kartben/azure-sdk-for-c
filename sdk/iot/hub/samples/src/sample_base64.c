@@ -9,25 +9,6 @@
 #include "sample_base64.h"
 #include "az_span.h"
 
-// static int sample_encode_base64(az_span input, az_span* output)
-// {
-//   BIO* decoded_mem;
-//   BIO* b64_decode;
-
-//   char* buffer = (char*)malloc(length);
-//   memset(buffer, 0, length);
-
-//   b64 = BIO_new(BIO_f_base64());
-//   bmem = BIO_new_mem_buf(az_span_ptr(input), az_span_size(length));
-//   bmem = BIO_push(b64, bmem);
-
-//   BIO_read(bmem, buffer, length);
-
-//   BIO_free_all(bmem);
-
-//   return buffer;
-// }
-
 az_result sample_base64_decode(az_span base64_encoded, az_span in_span, az_span* out_span)
 {
   az_result result;
@@ -117,7 +98,6 @@ az_result sample_hmac_encrypt(az_span key, az_span bytes, az_span in_span, az_sp
   {
     result = AZ_ERROR_INSUFFICIENT_SPAN_SIZE;
   }
-  
 
   return result;
 }
