@@ -196,9 +196,13 @@ static int get_sas_key()
   res = az_iot_hub_client_sas_get_signature(&client, SAS_TOKEN_EXPIRATION_TIME,
     AZ_SPAN_FROM_BUFFER(sas_signature_buf), &signature);
 
+  char decoded_key[128];
+  az_span decoded_key_span;
+  res = sample_base64_decode(
+      AZ_SPAN_FROM_STR(SAS_KEY), AZ_SPAN_FROM_BUFFER(decoded_key), &decoded_key_span);
 
   az_span encoded_span = AZ_SPAN_FROM_BUFFER(sas_signature_encoded_buf);
-  sample_base64_encode(iot_hub_sas_key_span, signature, encoded_span, &encoded_span);
+  sample_hmac_encrypt(iot_hub_sas_key_span, signature, encoded_span, &encoded_span);
   
   size_t out_length;
   res = az_iot_hub_client_sas_get_password(
