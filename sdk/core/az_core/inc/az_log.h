@@ -55,6 +55,9 @@ typedef enum
 
   AZ_LOG_IOT_SAS_TOKEN
   = _az_LOG_MAKE_CLASSIFICATION(_az_FACILITY_IOT, 2), ///< IoT Client generated new SAS token.
+
+  AZ_LOG_IOT_CONVENIENCE_LAYER
+  = _az_LOG_MAKE_CLASSIFICATION(_az_FACILITY_IOT, 3), ///< Azure IoT platform specific convenience layer.
 } az_log_classification;
 
 /**
