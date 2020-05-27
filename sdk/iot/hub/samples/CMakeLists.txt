@@ -63,24 +63,6 @@ target_link_libraries(
   OpenSSL::Crypto
   )
 
-# SAS key generation example
-add_executable(
-  sample_sas_key_generation
-  ${CMAKE_CURRENT_LIST_DIR}/src/sample_sas_key_generation.c
-  ${CMAKE_CURRENT_LIST_DIR}/src/sample_base64.c
-)
-
-target_link_libraries(
-  sample_sas_key_generation PRIVATE
-  az::core
-  az::iot::common
-  az::iot::hub
-  OpenSSL::Crypto
-)
-
-# PAL
-target_link_libraries(sample_sas_key_generation PRIVATE ${PAL})
-
 # Telemetry Sample
 add_executable (
   paho_iot_hub_telemetry_example
