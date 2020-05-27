@@ -19,6 +19,7 @@
 #else
 // Required for sleep(unsigned int)
 #include <unistd.h>
+#include <time.h>
 #endif
 
 #include "sample_base64.h"
@@ -40,6 +41,9 @@
 // DO NOT MODIFY: IoT Hub SAS Key Environment Variable Name
 #define ENV_IOT_HUB_SAS_KEY "AZ_IOT_HUB_SAS_KEY"
 
+// DO NOT MODIFY: IoT Hub SAS Key Expiration Environment Variable Name
+#define ENV_IOT_HUB_SAS_KEY_EXPIRATION "AZ_IOT_HUB_SAS_KEY_EXPIRATION"
+
 // DO NOT MODIFY: The path to a PEM file containing the device certificate and
 // key as well as any intermediate certificates chaining to an uploaded group certificate.
 #define ENV_DEVICE_X509_CERT_PEM_FILE "AZ_IOT_DEVICE_X509_CERT_PEM_FILE"
@@ -48,7 +52,7 @@
 // This is usually not needed on Linux or Mac but needs to be set on Windows.
 #define ENV_DEVICE_X509_TRUST_PEM_FILE "AZ_IOT_DEVICE_X509_TRUST_PEM_FILE"
 
-#define SAS_TOKEN_EXPIRATION_TIME 1590701214
+#define SAS_TOKEN_EXPIRATION_TIME_DIGITS 4
 #define TIMEOUT_MQTT_DISCONNECT_MS (10 * 1000)
 #define TELEMETRY_SEND_INTERVAL 1
 #define NUMBER_OF_MESSAGES 5
@@ -56,6 +60,7 @@
 static const uint8_t null_terminator = '\0';
 static char device_id[64];
 static char iot_hub_hostname[128];
+static uint32_t iot_hub_sas_key_expiration;
 static char iot_hub_sas_key[128];
 static az_span iot_hub_sas_key_span;
 static char x509_trust_pem_file[256];
@@ -78,6 +83,8 @@ static const char* telemetry_message_payloads[NUMBER_OF_MESSAGES] = {
 
 static az_iot_hub_client client;
 static MQTTClient mqtt_client;
+
+static uint32_t get_expiration_time(uint32_t hours) { return (uint32_t)(time(NULL) + hours * 60 * 60); }
 
 static void sleep_seconds(uint32_t seconds)
 {
@@ -153,6 +160,20 @@ static az_result read_configuration_and_init_client()
   AZ_RETURN_IF_FAILED(read_configuration_entry(
       "X509 Trusted PEM Store File", ENV_DEVICE_X509_TRUST_PEM_FILE, "", false, trusted, &trusted));
 
+  char iot_hub_sas_key_expiration_char[SAS_TOKEN_EXPIRATION_TIME_DIGITS];
+  az_span iot_hub_sas_expiration = AZ_SPAN_FROM_BUFFER(iot_hub_sas_key_expiration_char);
+  AZ_RETURN_IF_FAILED(read_configuration_entry(
+      "IoT Hub Device SAS Key Expiration (Hours)",
+      ENV_IOT_HUB_SAS_KEY_EXPIRATION,
+      "2",
+      false,
+      iot_hub_sas_expiration,
+      &iot_hub_sas_expiration));
+
+  az_span iot_hub_sas_key_expiration_span
+      = az_span_init(az_span_ptr(iot_hub_sas_expiration), az_span_size(iot_hub_sas_expiration));
+  AZ_RETURN_IF_FAILED(az_span_atou32(iot_hub_sas_key_expiration_span, &iot_hub_sas_key_expiration));
+
   iot_hub_sas_key_span = AZ_SPAN_FROM_BUFFER(iot_hub_sas_key);
   AZ_RETURN_IF_FAILED(read_configuration_entry(
       "IoT Hub Device SAS Key",
@@ -193,25 +214,31 @@ static int get_sas_key()
 {
   az_result res;
 
+  uint32_t sas_expiration = get_expiration_time(iot_hub_sas_key_expiration);
+
   az_span decoded_key_span;
   sample_base64_decode(
       iot_hub_sas_key_span, AZ_SPAN_FROM_BUFFER(sas_b64_decoded_key), &decoded_key_span);
 
   az_span sas_signature_span;
   res = az_iot_hub_client_sas_get_signature(
-      &client, SAS_TOKEN_EXPIRATION_TIME, AZ_SPAN_FROM_BUFFER(sas_signature_buf), &sas_signature_span);
+      &client,
+      sas_expiration,
+      AZ_SPAN_FROM_BUFFER(sas_signature_buf),
+      &sas_signature_span);
 
   az_span encoded_span = AZ_SPAN_FROM_BUFFER(sas_signature_hmac_encoded_buf);
   sample_hmac_encrypt(decoded_key_span, sas_signature_span, encoded_span, &encoded_span);
 
   az_span encoded_span_b64;
-  sample_base64_encode(encoded_span, AZ_SPAN_FROM_BUFFER(sas_signature_encoded_buf_b64), &encoded_span_b64);
+  sample_base64_encode(
+      encoded_span, AZ_SPAN_FROM_BUFFER(sas_signature_encoded_buf_b64), &encoded_span_b64);
 
   size_t sas_key_length;
   res = az_iot_hub_client_sas_get_password(
       &client,
       encoded_span_b64,
-      SAS_TOKEN_EXPIRATION_TIME,
+      sas_expiration,
       AZ_SPAN_NULL,
       sas_key_password,
       sizeof(sas_key_password),
@@ -318,7 +345,7 @@ int main()
     return rc;
   }
 
-  if(az_failed(rc = get_sas_key()))
+  if (az_failed(rc = get_sas_key()))
   {
     printf("Failed to get SAS key, return code %d\n", rc);
     return rc;
