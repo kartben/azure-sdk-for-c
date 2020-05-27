@@ -13,13 +13,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #ifdef _WIN32
 // Required for Sleep(DWORD)
 #include <Windows.h>
 #else
 // Required for sleep(unsigned int)
 #include <unistd.h>
-#include <time.h>
 #endif
 
 #include "sample_base64.h"
@@ -84,7 +84,10 @@ static const char* telemetry_message_payloads[NUMBER_OF_MESSAGES] = {
 static az_iot_hub_client client;
 static MQTTClient mqtt_client;
 
-static uint32_t get_expiration_time(uint32_t hours) { return (uint32_t)(time(NULL) + hours * 60 * 60); }
+static uint32_t get_expiration_time(uint32_t hours)
+{
+  return (uint32_t)(time(NULL) + hours * 60 * 60);
+}
 
 static void sleep_seconds(uint32_t seconds)
 {
