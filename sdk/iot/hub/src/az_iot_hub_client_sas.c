@@ -18,8 +18,8 @@
 #define AMPERSAND '&'
 #define EQUAL_SIGN '='
 #define STRING_NULL_TERMINATOR '\0'
-#define SCOPE_DEVICES_STRING "/devices/"
-#define SCOPE_MODULES_STRING "/modules/"
+#define SCOPE_DEVICES_STRING "%2Fdevices%2F"
+#define SCOPE_MODULES_STRING "%2Fmodules%2F"
 #define SAS_TOKEN_SR "SharedAccessSignature sr"
 #define SAS_TOKEN_SE "se"
 #define SAS_TOKEN_SIG "sig"
