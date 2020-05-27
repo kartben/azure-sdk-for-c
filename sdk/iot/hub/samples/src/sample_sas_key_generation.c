@@ -32,8 +32,6 @@ static int get_sas_key()
   res = az_iot_hub_client_sas_get_signature(
       &client, SAS_TOKEN_EXPIRATION_TIME, AZ_SPAN_FROM_BUFFER(sas_signature_buf), &signature);
 
-  printf("Signature %.*s", az_span_size(signature), az_span_ptr(signature));
-
   az_span encoded_span = AZ_SPAN_FROM_BUFFER(sas_signature_encoded_buf);
   sample_hmac_encrypt(decoded_key_span, signature, encoded_span, &encoded_span);
 
@@ -49,9 +47,6 @@ static int get_sas_key()
       sas_key_password,
       sizeof(sas_key_password),
       &sas_key_length);
-
-  printf("\n");
-  printf("SAS Key %s\n", sas_key_password);
 
   (void)res;
 

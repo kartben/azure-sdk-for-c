@@ -73,10 +73,13 @@ add_executable(
 target_link_libraries(
   sample_sas_key_generation PRIVATE
   az::core
-  az::iot::core
+  az::iot::common
   az::iot::hub
   OpenSSL::Crypto
 )
+
+# PAL
+target_link_libraries(sample_sas_key_generation PRIVATE ${PAL})
 
 # Telemetry Sample
 add_executable (
@@ -115,6 +118,9 @@ target_link_libraries(
   az_iot_common
   az_core
   )
+
+# PAL
+target_link_libraries(paho_iot_hub_sas_telemetry_example PRIVATE ${PAL})
 
 target_link_libraries(
   paho_iot_hub_sas_telemetry_example PRIVATE

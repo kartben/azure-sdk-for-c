@@ -48,8 +48,7 @@
 // This is usually not needed on Linux or Mac but needs to be set on Windows.
 #define ENV_DEVICE_X509_TRUST_PEM_FILE "AZ_IOT_DEVICE_X509_TRUST_PEM_FILE"
 
-#define SAS_KEY "GRU+K9i6F8tE7dLYCtuQcu10u6umGO+aWGqQQhd9AAo="
-#define SAS_TOKEN_EXPIRATION_TIME 1589976000
+#define SAS_TOKEN_EXPIRATION_TIME 1590701214
 #define TIMEOUT_MQTT_DISCONNECT_MS (10 * 1000)
 #define TELEMETRY_SEND_INTERVAL 1
 #define NUMBER_OF_MESSAGES 5
@@ -65,8 +64,10 @@ char telemetry_topic[128];
 static char mqtt_client_id[128];
 static char mqtt_username[128];
 static char mqtt_endpoint[128];
+static char sas_b64_decoded_key[64];
 static char sas_signature_buf[128];
-static char sas_signature_encoded_buf[128];
+static char sas_signature_hmac_encoded_buf[128];
+static char sas_signature_encoded_buf_b64[128];
 static char sas_key_password[256];
 static az_span mqtt_url_prefix = AZ_SPAN_LITERAL_FROM_STR("ssl://");
 static az_span mqtt_url_suffix = AZ_SPAN_LITERAL_FROM_STR(":8883");
@@ -192,27 +193,29 @@ static int get_sas_key()
 {
   az_result res;
 
-  az_span signature;
-  res = az_iot_hub_client_sas_get_signature(&client, SAS_TOKEN_EXPIRATION_TIME,
-    AZ_SPAN_FROM_BUFFER(sas_signature_buf), &signature);
-
-  char decoded_key[128];
   az_span decoded_key_span;
-  res = sample_base64_decode(
-      AZ_SPAN_FROM_STR(SAS_KEY), AZ_SPAN_FROM_BUFFER(decoded_key), &decoded_key_span);
+  sample_base64_decode(
+      iot_hub_sas_key_span, AZ_SPAN_FROM_BUFFER(sas_b64_decoded_key), &decoded_key_span);
 
-  az_span encoded_span = AZ_SPAN_FROM_BUFFER(sas_signature_encoded_buf);
-  sample_hmac_encrypt(iot_hub_sas_key_span, signature, encoded_span, &encoded_span);
-  
-  size_t out_length;
+  az_span sas_signature_span;
+  res = az_iot_hub_client_sas_get_signature(
+      &client, SAS_TOKEN_EXPIRATION_TIME, AZ_SPAN_FROM_BUFFER(sas_signature_buf), &sas_signature_span);
+
+  az_span encoded_span = AZ_SPAN_FROM_BUFFER(sas_signature_hmac_encoded_buf);
+  sample_hmac_encrypt(decoded_key_span, sas_signature_span, encoded_span, &encoded_span);
+
+  az_span encoded_span_b64;
+  sample_base64_encode(encoded_span, AZ_SPAN_FROM_BUFFER(sas_signature_encoded_buf_b64), &encoded_span_b64);
+
+  size_t sas_key_length;
   res = az_iot_hub_client_sas_get_password(
-    &client,
-    encoded_span,
-    SAS_TOKEN_EXPIRATION_TIME,
-    AZ_SPAN_NULL,
-    sas_key_password,
-    sizeof(sas_key_password),
-    &out_length);
+      &client,
+      encoded_span_b64,
+      SAS_TOKEN_EXPIRATION_TIME,
+      AZ_SPAN_NULL,
+      sas_key_password,
+      sizeof(sas_key_password),
+      &sas_key_length);
 
   (void)res;
 
@@ -242,9 +245,7 @@ static int connect_device()
 
   // This sample uses X509 authentication so the password field is set to NULL
   mqtt_connect_options.username = mqtt_username;
-  // mqtt_connect_options.password = sas_key_password;
-  mqtt_connect_options.password = "SharedAccessSignature sr=dawalton-hub.azure-devices.net%2Fdevices%2Fdane_cbor&sig=YJKNes2EGO65n%2BpnQ5TxubKzIn%2BjAI0a%2FmJDW7YIVW0%3D&se=1590003585";
-  // mqtt_connect_options.password = "SharedAccessSignature sr=dawalton-hub.azure-devices.net%2Fdevices%2Fdane_cbor&sig=9SioaVdIuHogrAoBlGMj7Wh9CjB4nMgmhA7dJb6OrII%3D&se=1589989088";
+  mqtt_connect_options.password = sas_key_password;
   printf("SAS Key: %s\n", mqtt_connect_options.password);
 
   if (*x509_trust_pem_file != '\0')
