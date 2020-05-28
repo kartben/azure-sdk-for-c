@@ -39,14 +39,10 @@
 #define ENV_IOT_HUB_HOSTNAME "AZ_IOT_HUB_HOSTNAME"
 
 // DO NOT MODIFY: IoT Hub SAS Key Environment Variable Name
-#define ENV_IOT_HUB_SAS_KEY "AZ_IOT_HUB_SAS_KEY"
+#define ENV_IOT_HUB_SAS_KEY "AZ_IOT_HUB_DEVICE_SAS_KEY"
 
-// DO NOT MODIFY: IoT Hub SAS Key Expiration Environment Variable Name
-#define ENV_IOT_HUB_SAS_KEY_EXPIRATION "AZ_IOT_HUB_SAS_KEY_EXPIRATION"
-
-// DO NOT MODIFY: The path to a PEM file containing the device certificate and
-// key as well as any intermediate certificates chaining to an uploaded group certificate.
-#define ENV_DEVICE_X509_CERT_PEM_FILE "AZ_IOT_DEVICE_X509_CERT_PEM_FILE"
+// DO NOT MODIFY: IoT Hub SAS Key Expiration Environment Variable Name (defaults to 2 hours)
+#define ENV_IOT_HUB_SAS_KEY_EXPIRATION "AZ_IOT_HUB_DEVICE_SAS_KEY_EXPIRATION"
 
 // DO NOT MODIFY: the path to a PEM file containing the server trusted CA
 // This is usually not needed on Linux or Mac but needs to be set on Windows.
