@@ -67,7 +67,6 @@ target_link_libraries(
 add_executable (
   paho_iot_hub_telemetry_example
   ${CMAKE_CURRENT_LIST_DIR}/src/paho_iot_hub_telemetry_example.c
-  ${CMAKE_CURRENT_LIST_DIR}/src/sample_base64.c
   )
 
 target_link_libraries(
@@ -110,6 +109,9 @@ target_link_libraries(
   OpenSSL::SSL
   OpenSSL::Crypto
   )
+
+# Spectre mitigation
+target_compile_options(paho_iot_hub_sas_telemetry_example PRIVATE /wd5045)
 
 # Twin Sample
 add_executable (
