@@ -111,7 +111,9 @@ target_link_libraries(
   )
 
 # Spectre mitigation
+if(WIN32)
 target_compile_options(paho_iot_hub_sas_telemetry_example PRIVATE /wd5045)
+endif()
 
 # Twin Sample
 add_executable (
